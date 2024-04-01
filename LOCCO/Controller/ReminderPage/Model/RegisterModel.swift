@@ -7,9 +7,10 @@
 
 import Foundation
 struct ReminderModel: Codable {
-  let startDate: String
+  let startDate, endDate: String
   let email: String
   let id: String
-  let updatedAt: String
+  let createdAt: String
   let title: String
+  let timestamp: Int
 }

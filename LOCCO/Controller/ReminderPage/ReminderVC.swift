@@ -16,15 +16,21 @@ class ReminderVC: UIViewController {
     
     //MARK: - Properties
     let vmReminder = ViewModelReminder()
-        
-        // MARK: - View Lifecycle
+    
+    // MARK: - view didappear
+    override func viewDidAppear(_ animated: Bool) {
+        vmReminder.fetchDataFromAPI()
+        remainderTblView.reloadData()
+    }
+
+    // MARK: - View Lifecycle
     override func viewDidLoad() {
-        super.viewDidLoad()
-        setUpUI()
-        remainderTblView.register(UINib(nibName: "ReminderTableViewCell", bundle: nil), forCellReuseIdentifier: "ReminderTableViewCell")
-        
         // Fetch data from API
         vmReminder.fetchDataFromAPI()
+        super.viewDidLoad()
+        emptyView.isHidden = true
+        setUpUI()
+        remainderTblView.register(UINib(nibName: "ReminderTableViewCell", bundle: nil), forCellReuseIdentifier: "ReminderTableViewCell")
         
         // Observe for notification
         NotificationCenter.default.addObserver(self, selector: #selector(dataFetched), name: Notification.Name("APIDataFetched"), object: nil)
@@ -41,8 +47,6 @@ class ReminderVC: UIViewController {
         // Remove observer when view controller is deallocated
         NotificationCenter.default.removeObserver(self)
     }
-
-
         
     func setUpUI() {
         headerView.roundCorners(corners: [.bottomLeft,.bottomRight], radius: 32)
@@ -95,7 +99,9 @@ extension ReminderVC: UITableViewDelegate, UITableViewDataSource {
         let rows = vmReminder.arraySectionData[section].rows
         emptyView.isHidden = rows.isEmpty ? false : true
         remainderTblView.isHidden = rows.isEmpty ? true : false
-        print("count:  \(rows.count)")
+        if(rows.count == 0){
+            emptyView.isHidden = false
+        }
         return rows.count
     }
 

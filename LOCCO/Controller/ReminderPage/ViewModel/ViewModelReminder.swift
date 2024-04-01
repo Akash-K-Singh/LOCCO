@@ -33,7 +33,6 @@ class ViewModelReminder {
                 
                 // Update ViewModel data
                 self.arrayReminderData = reminderModels
-                
                 // After updating data, recreate section data
                 self.createSectionData()
                 
@@ -60,7 +59,8 @@ class ViewModelReminder {
         // Prepare reminder data
         var reminderData: [String: Any] = [
             "email": "sudhird@zignuts.com",// Adding email parameter
-            "timestamp" : "none"
+            "description": "",
+            "endDate": "",
         ]
         if let unwrappedTitle = title {
             // If the title is not nil, add it to the reminder data
@@ -68,7 +68,7 @@ class ViewModelReminder {
         }
         // Add the date as a Unix timestamp to the reminder data
         reminderData["startDate"] = formatDate(unwrappedDate) // Adding startDate parameter
-        print("Reminder data: \(reminderData)")
+        
         // Create JSON data from reminderData
         guard let jsonData = try? JSONSerialization.data(withJSONObject: reminderData) else {
             // If JSON serialization fails, call the completion handler with false and return
@@ -109,10 +109,54 @@ class ViewModelReminder {
         }.resume() // Start the data task
     }
 
+    public func deleteDataFromAPI(id: String, completion: @escaping (Bool) -> Void) {
+        // Construct the URL with the provided id
+        guard let url = URL(string: "https://n5vd2rg187.execute-api.eu-central-1.amazonaws.com/staging/reminder/id/\(id)") else {
+            // If the URL cannot be constructed, call the completion handler with false and return
+            completion(false)
+            return
+        }
+       
+        // Create and configure the URL request
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+
+        // Perform the request
+        URLSession.shared.dataTask(with: request) { (data, response, error) in
+            if let error = error {
+                // If there is an error during the request, print the error and call the completion handler with false
+                print("Error: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                // If the response is not an HTTPURLResponse, call the completion handler with false
+                completion(false)
+                return
+            }
+            
+            // Check the HTTP status code for success
+            if 200 ..< 300 ~= httpResponse.statusCode {
+                // If the status code indicates success, call the completion handler with true
+                completion(true)
+            } else {
+                // If the status code indicates failure, print the status code and call the completion handler with false
+                print("HTTP status code: \(httpResponse.statusCode)")
+                completion(false)
+            }
+        }.resume() // Start the data task
+    }
+
+    
+    public func upadteDataToAPI(id: String){
+        print("update: \(id)")
+    }
+    
     // Function to format date into "yyyy-MM-dd" format
     private func formatDate(_ date: Date) -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return dateFormatter.string(from: date)
     }
 
@@ -121,10 +165,8 @@ class ViewModelReminder {
         arraySectionData.removeAll()
         // Header Model
         let sectionRows: [Rowmodel] = arrayReminderData.map { reminderModel in
-            return Rowmodel(title: reminderModel.title, Identifier: "Reminder", date: reminderModel.startDate, time: reminderModel.updatedAt, type: "ReminderCell")
+            return Rowmodel(title: reminderModel.title, Identifier: reminderModel.id, date: reminderModel.startDate, time: reminderModel.createdAt, type: "ReminderCell")
         }
         arraySectionData.append(SectionModel(identifier: "Reminder", rows: sectionRows))
-        print("arraySectionData0  :  \(arraySectionData)")
-        print("remin1  :  \(self.arrayReminderData)")
     }
 }

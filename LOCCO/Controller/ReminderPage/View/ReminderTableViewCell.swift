@@ -1,6 +1,10 @@
 import UIKit
 
 class ReminderTableViewCell: UITableViewCell{
+    
+    let vmReminder = ViewModelReminder()
+    var reminderId = "";
+    
     var popMenu:SwiftPopMenu!
     @IBOutlet var dateLbl: UILabel!
     @IBOutlet var timeLbl: UILabel!
@@ -11,7 +15,8 @@ class ReminderTableViewCell: UITableViewCell{
         super.awakeFromNib()
         // Initialization code
     }
-    func getCustomMenu() {
+    
+    func getCustomMenu(id: String) {
         let popData = [
             (icon: "Pen 2", title: "reminder_page-edit".translated),
             (icon: "Trash Bin Minimalistic 2", title: "reminder_page-delete".translated),
@@ -35,7 +40,24 @@ class ReminderTableViewCell: UITableViewCell{
         popMenu = SwiftPopMenu(menuWidth: 165, arrow: arrowPoint, datas: popData, configures: parameters)
         // Click handler
         popMenu.didSelectMenuBlock = { [weak self] index in
-            print("block select \(index)")
+            switch index {
+            case 0:
+                self?.vmReminder.upadteDataToAPI(id: id)
+            case 1:
+                self?.vmReminder.deleteDataFromAPI(id: id) { success in
+                    if success {
+                        print("Data deleted successfully")
+                        // Reload table view after deleted data
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: Notification.Name("APIDataFetched"), object: nil)
+                        }
+                    } else {
+                        print("Failed to delete data")
+                    }
+                }
+            default:
+                break
+            }
             self?.popMenu = nil
         }
         // Show the pop-up menu
@@ -43,11 +65,12 @@ class ReminderTableViewCell: UITableViewCell{
     }
     
     @IBAction func menuBtnClicked(_ sender: UIButton) {
-        getCustomMenu()
+        getCustomMenu(id: reminderId)
     }
     
     func configure(_ model: Rowmodel) {
         titleLbl.text = model.title
+        reminderId = model.Identifier
         
         // Format the date
         if let dateString = model.date {
