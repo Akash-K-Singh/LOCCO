@@ -1,9 +1,15 @@
 import UIKit
 
+protocol ReminderTableViewCellDelegate: AnyObject {
+    func didDeleteReminder(withId id: String)
+}
+
 class ReminderTableViewCell: UITableViewCell{
     
     let vmReminder = ViewModelReminder()
     var reminderId = "";
+    
+    weak var delegate: ReminderTableViewCellDelegate?
     
     var popMenu:SwiftPopMenu!
     @IBOutlet var dateLbl: UILabel!
@@ -47,10 +53,8 @@ class ReminderTableViewCell: UITableViewCell{
                 self?.vmReminder.deleteDataFromAPI(id: id) { success in
                     if success {
                         print("Data deleted successfully")
-                        // Reload table view after deleted data
-                        DispatchQueue.main.async {
-                            NotificationCenter.default.post(name: Notification.Name("APIDataFetched"), object: nil)
-                        }
+                        // Notify the delegate that a reminder was deleted
+                        self?.delegate?.didDeleteReminder(withId: id)
                     } else {
                         print("Failed to delete data")
                     }

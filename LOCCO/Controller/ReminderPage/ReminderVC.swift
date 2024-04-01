@@ -42,11 +42,6 @@ class ReminderVC: UIViewController {
             self?.remainderTblView.reloadData()
         }
     }
-
-    deinit {
-        // Remove observer when view controller is deallocated
-        NotificationCenter.default.removeObserver(self)
-    }
         
     func setUpUI() {
         headerView.roundCorners(corners: [.bottomLeft,.bottomRight], radius: 32)
@@ -94,7 +89,15 @@ class ReminderVC: UIViewController {
 }
 
 // MARK: - Table View Delegate and Data Source
-extension ReminderVC: UITableViewDelegate, UITableViewDataSource {
+extension ReminderVC: UITableViewDelegate, UITableViewDataSource, ReminderTableViewCellDelegate {
+    func didDeleteReminder(withId id: String) {
+        DispatchQueue.main.async { [weak self] in
+            // Reload data on the main thread
+            self?.vmReminder.fetchDataFromAPI()
+            self?.remainderTblView.reloadData()
+        }
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         let rows = vmReminder.arraySectionData[section].rows
         emptyView.isHidden = rows.isEmpty ? false : true
@@ -108,7 +111,7 @@ extension ReminderVC: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return vmReminder.arraySectionData.count
     }
-
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let rowInfo = vmReminder.arraySectionData[indexPath.section].rows[indexPath.row]
         let cellIdentifier = rowInfo.type
@@ -116,6 +119,7 @@ extension ReminderVC: UITableViewDelegate, UITableViewDataSource {
         case "ReminderCell":
             let cell = tableView.dequeueReusableCell(withIdentifier: "ReminderTableViewCell", for: indexPath) as! ReminderTableViewCell
             cell.configure(rowInfo)
+            cell.delegate = self // Set the delegate to self here
             return cell
         default:
             return UITableViewCell()
