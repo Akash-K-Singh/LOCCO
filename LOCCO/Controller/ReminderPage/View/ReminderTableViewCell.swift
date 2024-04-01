@@ -41,6 +41,7 @@ class ReminderTableViewCell: UITableViewCell{
         // Show the pop-up menu
         popMenu.show()
     }
+    
     @IBAction func menuBtnClicked(_ sender: UIButton) {
         getCustomMenu()
     }

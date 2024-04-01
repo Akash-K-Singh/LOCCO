@@ -48,53 +48,63 @@ class ViewModelReminder {
         }.resume()
     }
 
-    public func pushReminderToAPI(title: String, date: String, completion: @escaping (Bool) -> Void) {
-            // Define your API endpoint URL
-            guard let url = URL(string: "https://n5vd2rg187.execute-api.eu-central-1.amazonaws.com/staging/reminder/id/\(date)") else {
-                completion(false)
-                return
-            }
-            
-            // Prepare reminder data
-            let reminderData: [String: Any] = [
-                "title": title,
-                "date": date // Convert date to desired format
-            ]
-            
-            // Create JSON data from reminderData
-            guard let jsonData = try? JSONSerialization.data(withJSONObject: reminderData) else {
-                completion(false)
-                return
-            }
-            
-            // Create and configure the URL request
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = jsonData
-            
-            // Perform the request
-            URLSession.shared.dataTask(with: request) { (data, response, error) in
-                if let error = error {
-                    print("Error: \(error.localizedDescription)")
-                    completion(false)
-                    return
-                }
-                
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    completion(false)
-                    return
-                }
-                
-                // Check the HTTP status code for success
-                if 200 ..< 300 ~= httpResponse.statusCode {
-                    completion(true)
-                } else {
-                    print("HTTP status code: \(httpResponse.statusCode)")
-                    completion(false)
-                }
-            }.resume()
+    public func pushReminderToAPI(title: String?, date: Date?, completion: @escaping (Bool) -> Void) {
+        // Define your API endpoint URL
+        guard let unwrappedDate = date,
+              let url = URL(string: "https://n5vd2rg187.execute-api.eu-central-1.amazonaws.com/staging/reminder/id/\(unwrappedDate.timeIntervalSince1970)") else {
+            // If the date is nil or the URL cannot be constructed, call the completion handler with false and return
+            completion(false)
+            return
         }
+        
+        // Prepare reminder data
+        var reminderData: [String: Any] = [:]
+        if let unwrappedTitle = title {
+            // If the title is not nil, add it to the reminder data
+            reminderData["title"] = unwrappedTitle
+        }
+        // Add the date as a Unix timestamp to the reminder data
+        reminderData["date"] = unwrappedDate.timeIntervalSince1970 // Convert date to Unix timestamp
+        
+        // Create JSON data from reminderData
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: reminderData) else {
+            // If JSON serialization fails, call the completion handler with false and return
+            completion(false)
+            return
+        }
+        
+        // Create and configure the URL request
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+        
+        // Perform the request
+        URLSession.shared.dataTask(with: request) { (data, response, error) in
+            if let error = error {
+                // If there is an error during the request, print the error and call the completion handler with false
+                print("Error: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                // If the response is not an HTTPURLResponse, call the completion handler with false
+                completion(false)
+                return
+            }
+            
+            // Check the HTTP status code for success
+            if 200 ..< 300 ~= httpResponse.statusCode {
+                // If the status code indicates success, call the completion handler with true
+                completion(true)
+            } else {
+                // If the status code indicates failure, print the status code and call the completion handler with false
+                print("HTTP status code: \(httpResponse.statusCode)")
+                completion(false)
+            }
+        }.resume() // Start the data task
+    }
     
     public func createSectionData() {
         // This method remains the same as before, as it's used to structure your ViewModel's data
