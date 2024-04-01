@@ -51,21 +51,24 @@ class ViewModelReminder {
     public func pushReminderToAPI(title: String?, date: Date?, completion: @escaping (Bool) -> Void) {
         // Define your API endpoint URL
         guard let unwrappedDate = date,
-              let url = URL(string: "https://n5vd2rg187.execute-api.eu-central-1.amazonaws.com/staging/reminder/id/\(unwrappedDate.timeIntervalSince1970)") else {
+              let url = URL(string: "https://n5vd2rg187.execute-api.eu-central-1.amazonaws.com/staging/reminder") else {
             // If the date is nil or the URL cannot be constructed, call the completion handler with false and return
             completion(false)
             return
         }
         
         // Prepare reminder data
-        var reminderData: [String: Any] = [:]
+        var reminderData: [String: Any] = [
+            "email": "sudhird@zignuts.com",// Adding email parameter
+            "timestamp" : "none"
+        ]
         if let unwrappedTitle = title {
             // If the title is not nil, add it to the reminder data
             reminderData["title"] = unwrappedTitle
         }
         // Add the date as a Unix timestamp to the reminder data
-        reminderData["date"] = unwrappedDate.timeIntervalSince1970 // Convert date to Unix timestamp
-        
+        reminderData["startDate"] = formatDate(unwrappedDate) // Adding startDate parameter
+        print("Reminder data: \(reminderData)")
         // Create JSON data from reminderData
         guard let jsonData = try? JSONSerialization.data(withJSONObject: reminderData) else {
             // If JSON serialization fails, call the completion handler with false and return
@@ -105,7 +108,14 @@ class ViewModelReminder {
             }
         }.resume() // Start the data task
     }
-    
+
+    // Function to format date into "yyyy-MM-dd" format
+    private func formatDate(_ date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        return dateFormatter.string(from: date)
+    }
+
     public func createSectionData() {
         // This method remains the same as before, as it's used to structure your ViewModel's data
         arraySectionData.removeAll()
