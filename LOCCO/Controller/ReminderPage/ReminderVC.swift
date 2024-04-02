@@ -19,14 +19,14 @@ class ReminderVC: UIViewController {
     
     // MARK: - view didappear
     override func viewDidAppear(_ animated: Bool) {
-        vmReminder.fetchDataFromAPI()
+        vmReminder.fetchRemindersFromAPI()
         remainderTblView.reloadData()
     }
 
     // MARK: - View Lifecycle
     override func viewDidLoad() {
         // Fetch data from API
-        vmReminder.fetchDataFromAPI()
+        vmReminder.fetchRemindersFromAPI()
         super.viewDidLoad()
         emptyView.isHidden = true
         setUpUI()
@@ -81,8 +81,11 @@ class ReminderVC: UIViewController {
         self.navigationController?.popViewController(animated: !isFadeAnimation)
     }
     
-    func navigateToCreateReminder() {
+    func navigateToCreateReminder(id: String = "", title: String = "", date: String = "") {
         if let createReminder = AppStoryboard.main.viewController(CreateReminderVC.self) {
+            createReminder.reminderId = id
+            createReminder.prevTitle = title
+            createReminder.prevDate = date
             self.navigationController?.pushViewController(createReminder, animated: true)
         }
     }
@@ -90,10 +93,14 @@ class ReminderVC: UIViewController {
 
 // MARK: - Table View Delegate and Data Source
 extension ReminderVC: UITableViewDelegate, UITableViewDataSource, ReminderTableViewCellDelegate {
+    func didUpdateReminder(withId id: String, title: String, date: String) {
+        navigateToCreateReminder(id: id, title: title, date: date)
+    }
+    
     func didDeleteReminder(withId id: String) {
         DispatchQueue.main.async { [weak self] in
             // Reload data on the main thread
-            self?.vmReminder.fetchDataFromAPI()
+            self?.vmReminder.fetchRemindersFromAPI()
             self?.remainderTblView.reloadData()
         }
     }

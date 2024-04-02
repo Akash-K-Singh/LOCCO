@@ -10,7 +10,7 @@ struct ReminderModel: Codable {
   let startDate, endDate: String
   let email: String
   let id: String
-  let createdAt: String
+  let createdAt,updatedAt: String?
   let title: String
-  let timestamp: Int
+  let timestamp: Int?
 }

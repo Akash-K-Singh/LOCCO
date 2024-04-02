@@ -10,6 +10,10 @@ import MaterialComponents
 
 class CreateReminderVC: UIViewController {
     
+    var reminderId: String = ""
+    var prevTitle: String = ""
+    var prevDate: String = ""
+    
     @IBOutlet weak var txtWhereTo: MDCOutlinedTextField!
     @IBOutlet weak var txtDate: MDCOutlinedTextField!
     @IBOutlet weak var viewDPBase: UIView!
@@ -37,6 +41,32 @@ class CreateReminderVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         initialSetup()
+        if(reminderId != ""){
+            // Set the create button text to update button text
+            btnCreateReminder.setTitle("Update reminder", for: .normal)
+            
+            // Set the title
+            txtWhereTo.text = prevTitle
+            
+            // Set the text of txtDate with the formatted date string
+            txtDate.text = formatDateString(prevDate)
+        }
+    }
+    
+    func formatDateString(_ dateString: String) -> String? {
+        // Parse the prevDate string into a Date object
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ" // Use the format of the prevDate string
+        
+        if let date = dateFormatter.date(from: dateString) {
+            // Format the date into the desired format "ddMMyy HHmm"
+            dateFormatter.dateFormat = "dd.MM.yyyy HH:mm" // Change to the desired format "ddMMyy HHmm"
+            let formattedDate = dateFormatter.string(from: date)
+            return formattedDate
+        } else {
+            print("Failed to parse prevDate string into Date object")
+            return nil
+        }
     }
     
     // MARK: - Actions
@@ -61,28 +91,64 @@ class CreateReminderVC: UIViewController {
     
     @IBAction func btnCreateClicked(_ sender: Any) -> Void {
         self.currentValue.title = txtWhereTo.text
-        if SMValidator.isEmptyString(self.currentValue.title) {
-            view.makeToast("Please enter where to")
-            return
-        }
-        
-        if self.currentValue.date == nil {
-            view.makeToast("Please select date")
-            return
-        }
-        
-        vmReminder.pushReminderToAPI(title: currentValue.title, date: currentValue.date) { success in
-            if success {
-                // Handle success case
-                print("Reminder pushed successfully!")
-            } else {
-                // Handle failure case
-                print("Failed to push reminder.")
+        if(reminderId==""){
+            if SMValidator.isEmptyString(self.currentValue.title) {
+                view.makeToast("Please enter where to")
+                return
             }
-        }
-        
-        view.makeToast("Reminder added successfully!") { didTap in
-            self.navigationController?.popViewController(animated: true)
+            
+            if self.currentValue.date == nil {
+                view.makeToast("Please select date")
+                return
+            }
+            
+            vmReminder.pushReminderToAPI(title: currentValue.title, date: currentValue.date) { success in
+                if success {
+                    // Handle success case
+                    print("Reminder pushed successfully!")
+                } else {
+                    // Handle failure case
+                    print("Failed to push reminder.")
+                }
+            }
+            
+            view.makeToast("Reminder added successfully!") { didTap in
+                self.navigationController?.popViewController(animated: true)
+            }
+        } else {
+            if SMValidator.isEmptyString(self.currentValue.title) {
+                self.currentValue.title = prevTitle
+            }
+            
+            if self.currentValue.date == nil {
+                // Create a date formatter
+                let dateFormatter = DateFormatter()
+                // Set the date format according to the format of the prevDate string
+                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+                // Convert the prevDate string to a Date object
+                if let date = dateFormatter.date(from: prevDate) {
+                    // Assign the converted date to self.currentValue.date
+                    self.currentValue.date = date
+                } else {
+                    // Handle the case where prevDate string cannot be converted to a Date
+                    print("Failed to convert prevDate string to Date")
+                }
+            }
+
+            
+            vmReminder.putReminderToAPI(id: reminderId, title: currentValue.title!, date: currentValue.date!) { success in
+                if success {
+                    // Handle success case
+                    print("Reminder update successfully!")
+                } else {
+                    // Handle failure case
+                    print("Failed to update reminder.")
+                }
+            }
+            
+            view.makeToast("Reminder updated successfully!") { didTap in
+                self.navigationController?.popViewController(animated: true)
+            }
         }
     }
     

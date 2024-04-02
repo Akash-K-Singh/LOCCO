@@ -2,12 +2,14 @@ import UIKit
 
 protocol ReminderTableViewCellDelegate: AnyObject {
     func didDeleteReminder(withId id: String)
+    func didUpdateReminder(withId id: String, title: String, date: String)
 }
 
 class ReminderTableViewCell: UITableViewCell{
     
     let vmReminder = ViewModelReminder()
     var reminderId = "";
+    var remiderDate = "";
     
     weak var delegate: ReminderTableViewCellDelegate?
     
@@ -22,7 +24,7 @@ class ReminderTableViewCell: UITableViewCell{
         // Initialization code
     }
     
-    func getCustomMenu(id: String) {
+    func getCustomMenu(id: String, title: String, date: String) {
         let popData = [
             (icon: "Pen 2", title: "reminder_page-edit".translated),
             (icon: "Trash Bin Minimalistic 2", title: "reminder_page-delete".translated),
@@ -48,9 +50,10 @@ class ReminderTableViewCell: UITableViewCell{
         popMenu.didSelectMenuBlock = { [weak self] index in
             switch index {
             case 0:
-                self?.vmReminder.upadteDataToAPI(id: id)
+                // Call delegate method for updating reminder
+                self?.delegate?.didUpdateReminder(withId: id, title: title, date: date)
             case 1:
-                self?.vmReminder.deleteDataFromAPI(id: id) { success in
+                self?.vmReminder.deleteReminderFromAPI(id: id) { success in
                     if success {
                         print("Data deleted successfully")
                         // Notify the delegate that a reminder was deleted
@@ -69,11 +72,12 @@ class ReminderTableViewCell: UITableViewCell{
     }
     
     @IBAction func menuBtnClicked(_ sender: UIButton) {
-        getCustomMenu(id: reminderId)
+        getCustomMenu(id: reminderId, title: titleLbl.text ?? "", date: remiderDate)
     }
     
     func configure(_ model: Rowmodel) {
         titleLbl.text = model.title
+        remiderDate = model.date!
         reminderId = model.Identifier
         
         // Format the date
